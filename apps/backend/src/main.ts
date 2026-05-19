@@ -50,7 +50,7 @@ async function bootstrap(): Promise<void> {
     logger.log('📚 Swagger docs: http://localhost:3001/api/docs');
   }
 
-  const port = process.env.PORT || 3001;
+  const port = parseInt(process.env.PORT || '3001', 10);
   await app.listen(port, '0.0.0.0');
   logger.log(`🚀 Server running on port ${port} (0.0.0.0)`);
   logger.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
