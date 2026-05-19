@@ -29,10 +29,7 @@ async function bootstrap(): Promise<void> {
 
   // CORS
   app.enableCors({
-  origin: [
-    'http://localhost:3000',
-    'https://w-mkvufjjjg-devlalit1s-projects.vercel.app'
-  ],
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 });
