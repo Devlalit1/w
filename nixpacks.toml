@@ -14,4 +14,4 @@ cmds = [
 ]
 
 [start]
-cmd = "cd apps/backend && node dist/main"
+cmd = "cd apps/backend && pnpm prisma:deploy && node dist/main"
