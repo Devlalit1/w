@@ -8,25 +8,22 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9
 
-# Copy workspace manifests first (for layer caching)
+# Copy workspace config first (layer cache optimization)
 COPY package.json pnpm-workspace.yaml ./
-COPY apps/backend/package.json ./apps/backend/
-
-# Copy lockfile if it exists
 COPY pnpm-lock.yaml* ./
-
-# Install ALL dependencies (dev + prod) for building
-RUN pnpm install --no-frozen-lockfile --filter backend...
-
-# Copy source code
-COPY apps/backend/ ./apps/backend/
+COPY apps/backend/package.json ./apps/backend/
 COPY packages/ ./packages/
 
-# Generate Prisma Client
-# In pnpm monorepo, prisma client goes to root node_modules
-RUN pnpm --filter backend prisma:generate
+# Install ALL dependencies (dev + prod needed for build)
+RUN pnpm install --no-frozen-lockfile --filter backend...
 
-# Compile TypeScript → dist/
+# Copy backend source code
+COPY apps/backend/ ./apps/backend/
+
+# Generate Prisma Client (writes into node_modules)
+RUN cd apps/backend && npx prisma generate
+
+# Build TypeScript → dist/
 RUN pnpm --filter backend build
 
 # ─────────────────────────────────────────────
@@ -41,26 +38,24 @@ RUN npm install -g pnpm@9
 
 # Copy workspace manifests
 COPY package.json pnpm-workspace.yaml ./
-COPY apps/backend/package.json ./apps/backend/
 COPY pnpm-lock.yaml* ./
+COPY apps/backend/package.json ./apps/backend/
 
-# Install production dependencies only
+# Install ONLY production dependencies
 RUN pnpm install --no-frozen-lockfile --filter backend... --prod
 
-# Copy compiled output from builder
+# Copy compiled JS from builder
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 
-# Copy Prisma schema (needed for migrations & runtime)
+# Copy Prisma schema (required at runtime for query engine)
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
 
-# Copy the generated Prisma client from root node_modules (pnpm hoists it there)
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/.prisma/client ./node_modules/.prisma/client
+# Copy the entire node_modules from builder
+# This is the safest approach — avoids glob issues with pnpm's content-addressable store
+COPY --from=builder /app/node_modules ./node_modules
 
-# Expose port
 EXPOSE 3001
 
-# Working directory for the app
 WORKDIR /app/apps/backend
 
 CMD ["node", "dist/main"]
