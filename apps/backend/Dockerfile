@@ -11,7 +11,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/backend/package.json ./apps/backend/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile --filter backend
+RUN pnpm install --no-frozen-lockfile --filter backend
 
 # Copy source
 COPY apps/backend/ ./apps/backend/
@@ -33,7 +33,7 @@ RUN npm install -g pnpm
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/backend/package.json ./apps/backend/
 
-RUN pnpm install --frozen-lockfile --filter backend --prod
+RUN pnpm install --no-frozen-lockfile --filter backend --prod
 
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
