@@ -51,8 +51,8 @@ async function bootstrap(): Promise<void> {
   }
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
-  logger.log(`🚀 Server running on http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  logger.log(`🚀 Server running on port ${port} (0.0.0.0)`);
   logger.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 
