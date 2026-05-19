@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = [
+  "npm install -g pnpm@9",
+  "pnpm install --no-frozen-lockfile --filter backend..."
+]
+
+[phases.build]
+cmds = [
+  "pnpm --filter backend prisma:generate",
+  "pnpm --filter backend build"
+]
+
+[start]
+cmd = "cd apps/backend && node dist/main"

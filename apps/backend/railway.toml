@@ -1,9 +1,10 @@
 [build]
 builder = "NIXPACKS"
+buildCommand = "pnpm install --no-frozen-lockfile && pnpm --filter backend prisma:generate && pnpm --filter backend build"
 
 [deploy]
-startCommand = "node dist/main.js"
+startCommand = "node apps/backend/dist/main"
 healthcheckPath = "/api/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
