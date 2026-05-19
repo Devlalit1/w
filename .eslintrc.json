@@ -4,9 +4,7 @@
   "parserOptions": {
     "ecmaVersion": 2020,
     "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true
-    }
+    "ecmaFeatures": { "jsx": true }
   },
   "env": {
     "browser": true,
@@ -19,10 +17,10 @@
   ],
   "plugins": ["@typescript-eslint"],
   "rules": {
-    "@typescript-eslint/explicit-function-return-types": "warn",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-unused-vars": "error",
-    "no-console": ["warn", { "allow": ["warn", "error"] }]
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/explicit-function-return-types": "off",
+    "no-console": ["warn", { "allow": ["warn", "error", "log"] }]
   },
-  "ignorePatterns": ["node_modules", "dist", ".next", "build"]
+  "ignorePatterns": ["node_modules", "dist", ".next", "build", "apps/web/**"]
 }

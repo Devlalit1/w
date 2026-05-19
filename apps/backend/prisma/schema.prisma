@@ -1,0 +1,235 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum TeamMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum NodeType {
+  SERVICE
+  DATABASE
+  API
+  QUEUE
+  CACHE
+  FRONTEND
+  BACKEND
+  GATEWAY
+  STORAGE
+  EXTERNAL
+}
+
+enum EdgeType {
+  CONNECTION
+  DEPENDENCY
+  DATAFLOW
+  SYNC
+  ASYNC
+}
+
+enum AnalysisType {
+  ARCHITECTURE
+  DOCUMENTATION
+  COMPLEXITY
+  SECURITY
+  PERFORMANCE
+}
+
+enum AnalysisStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String?
+  name      String
+  avatar    String?
+  role      UserRole  @default(USER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  teams          TeamMember[]
+  projects       Project[]
+  workspaces     Workspace[]
+  collaborations Collaboration[]
+
+  @@map("users")
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members    TeamMember[]
+  projects   Project[]
+  workspaces Workspace[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String         @id @default(cuid())
+  teamId    String
+  userId    String
+  role      TeamMemberRole @default(MEMBER)
+  createdAt DateTime       @default(now())
+
+  // Relations
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String
+  description String?
+  createdBy   String
+  teamId      String?
+  isPublic    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  creator    User          @relation(fields: [createdBy], references: [id])
+  team       Team?         @relation(fields: [teamId], references: [id])
+  workspaces Workspace[]
+  analyses   AIAnalysis[]
+
+  @@map("projects")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  projectId String
+  ownerId   String
+  teamId    String?
+  isPublic  Boolean  @default(false)
+  data      Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner          User             @relation(fields: [ownerId], references: [id])
+  team           Team?            @relation(fields: [teamId], references: [id])
+  nodes          WorkspaceNode[]
+  edges          WorkspaceEdge[]
+  collaborations Collaboration[]
+  history        WorkspaceHistory[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceNode {
+  id          String   @id @default(cuid())
+  workspaceId String
+  type        NodeType @default(SERVICE)
+  label       String
+  description String?
+  position    Json     @default("{\"x\":0,\"y\":0,\"z\":0}")
+  data        Json     @default("{}")
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sourceEdges  WorkspaceEdge[] @relation("SourceNode")
+  targetEdges  WorkspaceEdge[] @relation("TargetNode")
+
+  @@map("workspace_nodes")
+}
+
+model WorkspaceEdge {
+  id          String   @id @default(cuid())
+  workspaceId String
+  sourceId    String
+  targetId    String
+  type        EdgeType @default(CONNECTION)
+  label       String?
+  data        Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  // Relations
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source    WorkspaceNode @relation("SourceNode", fields: [sourceId], references: [id], onDelete: Cascade)
+  target    WorkspaceNode @relation("TargetNode", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_edges")
+}
+
+model WorkspaceHistory {
+  id          String   @id @default(cuid())
+  workspaceId String
+  action      String
+  data        Json
+  userId      String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_history")
+}
+
+model Collaboration {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  isActive    Boolean  @default(true)
+  cursorData  Json     @default("{}")
+  joinedAt    DateTime @default(now())
+  leftAt      DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId])
+  @@map("collaborations")
+}
+
+model AIAnalysis {
+  id        String         @id @default(cuid())
+  projectId String
+  type      AnalysisType
+  status    AnalysisStatus @default(PENDING)
+  prompt    String?
+  result    Json           @default("{}")
+  error     String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("ai_analyses")
+}
