@@ -26,9 +26,9 @@ export class AIService {
       // Mock response for demo
       return JSON.stringify({
         summary: 'AI analysis complete (mock mode - add GEMINI_API_KEY to enable real AI)',
-        insights: ['Use microservices for scalability', 'Add caching layer for performance', 'Implement rate limiting'],
-        score: 85,
-        recommendations: ['Consider Redis caching', 'Add circuit breakers', 'Implement health checks'],
+        complexity: 'MEDIUM',
+        suggestions: ['Consider Redis caching', 'Add circuit breakers', 'Implement health checks'],
+        documentation: '# Architecture Documentation\n\nMock mode enabled. Add GEMINI_API_KEY for full analysis.',
       });
     }
 
@@ -38,6 +38,9 @@ export class AIService {
   }
 
   async analyzeArchitecture(projectId: string, description: string) {
+    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) throw new Error('Project not found');
+
     const analysis = await this.prisma.aIAnalysis.create({
       data: { projectId, type: 'ARCHITECTURE', status: 'RUNNING', prompt: description },
     });
@@ -47,21 +50,39 @@ export class AIService {
 
 Architecture Description: ${description}
 
-Respond with a JSON object containing:
-- summary: brief summary
-- insights: array of key observations  
-- score: architecture quality score (0-100)
-- recommendations: array of improvement suggestions
-- risks: potential risks or issues`;
+Respond ONLY with a valid JSON object (no markdown code blocks or text around it) containing exactly these fields:
+- "summary": string (brief architectural summary)
+- "complexity": string (must be exactly one of: "LOW", "MEDIUM", "HIGH", "CRITICAL")
+- "suggestions": array of strings (improvement recommendations)
+- "documentation": string (markdown formatted technical documentation of the architecture)`;
 
-      const result = await this.callGemini(prompt);
+      let rawResult = await this.callGemini(prompt);
+
+      // Clean up markdown block if present
+      rawResult = rawResult.replace(/^```json\n/im, '').replace(/^```\n/im, '').replace(/\n```$/m, '').trim();
+
+      let parsedResult;
+      try {
+        parsedResult = JSON.parse(rawResult);
+      } catch (e) {
+        this.logger.error('Failed to parse Gemini response', rawResult);
+        throw new Error('AI returned invalid JSON');
+      }
 
       await this.prisma.aIAnalysis.update({
         where: { id: analysis.id },
-        data: { status: 'COMPLETED', result: { text: result } },
+        data: { status: 'COMPLETED', result: parsedResult as any },
       });
 
-      return { id: analysis.id, result };
+      return {
+        projectId,
+        projectName: project.name,
+        summary: parsedResult.summary || 'Analysis complete.',
+        complexity: parsedResult.complexity || 'MEDIUM',
+        suggestions: parsedResult.suggestions || [],
+        documentation: parsedResult.documentation || '# Documentation\n\nNo documentation generated.',
+        createdAt: analysis.createdAt.toISOString(),
+      };
     } catch (error) {
       await this.prisma.aIAnalysis.update({
         where: { id: analysis.id },
