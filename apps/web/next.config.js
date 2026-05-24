@@ -4,7 +4,9 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
   experimental: {
-    serverActions: { allowedOrigins: ['localhost:3000'] },
+    serverActions: {
+      allowedOrigins: ['localhost:3000', 'w-web-eight.vercel.app', '*.vercel.app'],
+    },
   },
   images: {
     remotePatterns: [

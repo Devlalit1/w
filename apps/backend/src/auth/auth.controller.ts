@@ -1,9 +1,9 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
@@ -26,6 +26,20 @@ export class LoginDto {
 
   @IsString()
   password: string;
+}
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+
+export class ChangePasswordDto {
+  @IsString()
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(8)
+  newPassword: string;
 }
 
 @ApiTags('Auth')
@@ -56,5 +70,31 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user' })
   async getMe(@CurrentUser() user: any) {
     return { user };
+  }
+
+  /**
+   * POST /api/auth/forgot-password
+   * Always returns 200 (security: don't reveal if email exists).
+   */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset email' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    try {
+      // Fire-and-forget; suppress errors so email existence is not revealed
+      await this.authService.forgotPassword(dto.email);
+    } catch { /* intentionally swallow */ }
+    return { message: 'If an account with that email exists, a reset link has been sent.' };
+  }
+
+  /**
+   * PATCH /api/auth/password — called by Settings security section
+   */
+  @Post('password')
+  @JwtAuthGuard()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change current user password' })
+  async changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
   }
 }

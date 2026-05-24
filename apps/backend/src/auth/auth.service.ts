@@ -58,4 +58,25 @@ export class AuthService {
   async validateUser(userId: string) {
     return this.prisma.user.findUnique({ where: { id: userId, deletedAt: null } });
   }
+
+  async forgotPassword(email: string): Promise<void> {
+    // Find user — if not found, silently return (security: don't reveal email existence)
+    const user = await this.prisma.user.findUnique({ where: { email, deletedAt: null } });
+    if (!user) return;
+    // TODO: integrate email sending (SendGrid, Resend, etc.) with a time-limited reset token
+    this.logger.log(`Password reset requested for: ${email}`);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.password) throw new UnauthorizedException('User not found');
+
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) throw new UnauthorizedException('Current password is incorrect');
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await this.prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+    this.logger.log(`Password changed for user: ${userId}`);
+    return { message: 'Password updated successfully' };
+  }
 }

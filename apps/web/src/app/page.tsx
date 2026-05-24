@@ -94,15 +94,10 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            {['Features', 'Pricing', 'Docs', 'Blog'].map((item) => (
-              <Link
-                key={item}
-                href={`/${item.toLowerCase()}`}
-                className="hover:text-white transition-colors duration-200"
-              >
-                {item}
-              </Link>
-            ))}
+            <a href="#features" className="hover:text-white transition-colors duration-200">Features</a>
+            <Link href="/pricing" className="hover:text-white transition-colors duration-200">Pricing</Link>
+            <Link href="/docs" className="hover:text-white transition-colors duration-200">Docs</Link>
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-200">GitHub</a>
           </div>
 
           <div className="flex items-center gap-3">
@@ -171,13 +166,13 @@ export default function LandingPage() {
             >
               Start for Free <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link
-              href="/login"
+            <a
+              href="#features"
               id="hero-cta-demo"
               className="px-8 py-4 text-base font-semibold glass text-white rounded-xl hover:bg-white/10 transition-all duration-200 flex items-center gap-2"
             >
-              <Box className="w-4 h-4" /> View Demo
-            </Link>
+              <Box className="w-4 h-4" /> See Features
+            </a>
           </motion.div>
         </div>
 
@@ -324,11 +319,10 @@ export default function LandingPage() {
             <span className="text-sm text-muted-foreground">DevVerse AI © 2026</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            {['Privacy', 'Terms', 'Contact', 'GitHub'].map((item) => (
-              <Link key={item} href="#" className="hover:text-white transition-colors">
-                {item}
-              </Link>
-            ))}
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+            <a href="mailto:hello@devverse.ai" className="hover:text-white transition-colors">Contact</a>
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
           </div>
         </div>
       </footer>
