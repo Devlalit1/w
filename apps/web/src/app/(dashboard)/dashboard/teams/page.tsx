@@ -163,11 +163,11 @@ export default function TeamsPage() {
     }
   };
 
-  const handleRemoveMember = async (teamId: string, memberId: string, memberName: string) => {
+  const handleRemoveMember = async (teamId: string, userId: string, memberName: string) => {
     try {
-      await apiClient.delete(`/teams/${teamId}/members/${memberId}`);
+      await apiClient.delete(`/teams/${teamId}/members/${userId}`);
     } catch { /* optimistic */ }
-    const updated = { ...selectedTeam!, members: selectedTeam!.members.filter((m) => m.id !== memberId) };
+    const updated = { ...selectedTeam!, members: selectedTeam!.members.filter((m) => m.user.id !== userId) };
     setTeams((prev) => prev.map((t) => (t.id === teamId ? updated : t)));
     setSelectedTeam(updated);
     toast({ title: 'Member removed', description: `${memberName} has been removed from the team.`, type: 'info' });
@@ -326,7 +326,7 @@ export default function TeamsPage() {
                         </div>
                         {!isOwner && !isSelf && (
                           <button
-                            onClick={() => handleRemoveMember(selectedTeam.id, member.id, member.user.name)}
+                            onClick={() => handleRemoveMember(selectedTeam.id, member.user.id, member.user.name)}
                             className="p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                             title="Remove member"
                           >

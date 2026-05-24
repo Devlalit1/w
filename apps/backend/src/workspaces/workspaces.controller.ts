@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Put, Patch, Delete, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { WorkspacesService } from './workspaces.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -54,9 +54,18 @@ export class WorkspacesController {
 
   @Put(':id/data')
   @JwtAuthGuard()
-  @ApiOperation({ summary: 'Update workspace data' })
+  @ApiOperation({ summary: 'Update workspace data (PUT)' })
   async updateWorkspaceData(@Param('id') id: string, @Body() data: any) {
     return this.workspacesService.updateWorkspaceData(id, data);
+  }
+
+  @Patch(':id')
+  @JwtAuthGuard()
+  @ApiOperation({ summary: 'Update workspace data (PATCH — used by frontend save)' })
+  async patchWorkspace(@Param('id') id: string, @Body() body: any) {
+    // Frontend sends { data: { nodes, edges } } or just { nodes, edges }
+    const payload = body.data ?? body;
+    return this.workspacesService.updateWorkspaceData(id, payload);
   }
 
   @Post(':id/nodes')

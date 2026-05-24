@@ -101,6 +101,33 @@ export default function WorkspacePage() {
   }, [params.id]);
 
   // ESC key handler
+  // ESC + Ctrl+S handler — placed after handleSave below
+
+  const markUnsaved = () => setSaveState('unsaved');
+
+  const handleSave = async () => {
+    setSaveState('saving');
+    const payload = {
+      nodes: nodes.map((n) => ({ id: n.id, label: n.label, type: n.type, position: { x: n.x, y: n.y }, color: n.color, description: n.description })),
+      edges: edges.map((e) => ({ id: e.id, sourceId: e.sourceId, targetId: e.targetId, label: e.label })),
+    };
+    try {
+      let wsId = workspaceId;
+      if (!wsId) {
+        // Create workspace first, then save data
+        const res = await apiClient.post('/workspaces', { projectId: params.id, name: 'Main Workspace' });
+        wsId = res.data.id;
+        setWorkspaceId(wsId);
+      }
+      await apiClient.patch(`/workspaces/${wsId}`, { data: payload });
+      setSaveState('saved');
+      toast({ title: 'Workspace saved!', type: 'success' });
+    } catch {
+      setSaveState('saved');
+      toast({ title: 'Saved locally', description: 'Changes will sync when backend reconnects.', type: 'info' });
+    }
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -115,30 +142,8 @@ export default function WorkspacePage() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, workspaceId]);
-
-  const markUnsaved = () => setSaveState('unsaved');
-
-  const handleSave = async () => {
-    setSaveState('saving');
-    const payload = {
-      nodes: nodes.map((n) => ({ id: n.id, label: n.label, type: n.type, position: { x: n.x, y: n.y }, color: n.color, description: n.description })),
-      edges: edges.map((e) => ({ id: e.id, sourceId: e.sourceId, targetId: e.targetId, label: e.label })),
-    };
-    try {
-      if (workspaceId) {
-        await apiClient.patch(`/workspaces/${workspaceId}`, { data: payload });
-      } else {
-        const res = await apiClient.post('/workspaces', { projectId: params.id, name: 'Main Workspace', data: payload });
-        setWorkspaceId(res.data.id);
-      }
-      setSaveState('saved');
-      toast({ title: 'Workspace saved!', type: 'success' });
-    } catch {
-      setSaveState('saved');
-      toast({ title: 'Saved locally', description: 'Changes will sync when backend reconnects.', type: 'info' });
-    }
-  };
 
   const handleMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation();
